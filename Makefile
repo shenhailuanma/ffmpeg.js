@@ -7,14 +7,20 @@ POST_JS_SYNC = build/post-sync.js
 POST_JS_WORKER = build/post-worker.js
 
 COMMON_FILTERS = aresample scale crop overlay
-COMMON_DEMUXERS = matroska ogg avi mov flv mpegps image2 mp3 concat
+# COMMON_DEMUXERS = matroska ogg avi mov flv mpegps image2 mp3 concat gif
+COMMON_DEMUXERS = matroska avi mov flv mpegps image2 mp3 gif
+# COMMON_DECODERS = \
+# 	vp8 vp9 theora \
+# 	mpeg2video mpeg4 h264 hevc \
+# 	png mjpeg \
+# 	vorbis opus \
+# 	mp3 ac3 aac \
+# 	ass ssa srt webvtt gif
+
 COMMON_DECODERS = \
-	vp8 vp9 theora \
 	mpeg2video mpeg4 h264 hevc \
 	png mjpeg \
-	vorbis opus \
-	mp3 ac3 aac \
-	ass ssa srt webvtt
+	mp3 ac3 aac gif
 
 WEBM_MUXERS = webm ogg null image2
 WEBM_ENCODERS = libvpx_vp8 libopus mjpeg
@@ -34,17 +40,19 @@ WEBM_SHARED_DEPS = \
 	build/opus/dist/lib/libopus.so \
 	build/libvpx/dist/lib/libvpx.so
 
-MP4_MUXERS = mp4 mp3 null
-MP4_ENCODERS = libx264 libmp3lame aac
+MP4_MUXERS = mp4 mp3 null image2 gif
+MP4_ENCODERS = libx264 libmp3lame aac mjpeg gif png
 FFMPEG_MP4_BC = build/ffmpeg-mp4/ffmpeg.bc
 FFMPEG_MP4_PC_PATH = ../x264/dist/lib/pkgconfig
 MP4_SHARED_DEPS = \
 	build/lame/dist/lib/libmp3lame.so \
 	build/x264/dist/lib/libx264.so
 
-all: webm mp4
-webm: ffmpeg-webm.js ffmpeg-worker-webm.js
-mp4: ffmpeg-mp4.js ffmpeg-worker-mp4.js
+all: webm mp4 mp4-worker
+webm: ffmpeg-webm.js
+webm-worker: ffmpeg-worker-webm.js
+mp4: ffmpeg-mp4.js
+mp4-worker: ffmpeg-worker-mp4.js
 
 clean: clean-js \
 	clean-freetype clean-fribidi clean-libass \
@@ -306,8 +314,9 @@ build/ffmpeg-mp4/ffmpeg.bc: $(MP4_SHARED_DEPS)
 # for simple tests and 32M tends to run slower than 64M.
 EMCC_COMMON_ARGS = \
 	--closure 1 \
-	-s TOTAL_MEMORY=67108864 \
-	-s OUTLINING_LIMIT=20000 \
+	-s TOTAL_MEMORY=671088640 \
+	-s OUTLINING_LIMIT=0 \
+	-s ALLOW_MEMORY_GROWTH=1 \
 	-O3 --memory-init-file 0 \
 	--pre-js $(PRE_JS) \
 	-o $@
